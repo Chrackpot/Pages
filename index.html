@@ -988,12 +988,46 @@
             const quickReadyThreshold = 120;
             const quickReadyMinimum = 300;
             const standardReadyMinimum = 650;
-            let targetLoaderProgress = 0;
+            const startupStepWeights = [0.46, 0.19, 0.12, 0.14];
+            const startupStepMilestones = startupStepWeights.reduce(function(milestones, weight) {
+                const lastMilestone = milestones.length ? milestones[milestones.length - 1] : 0.08;
+                milestones.push(lastMilestone + weight);
+                return milestones;
+            }, []);
+            let baseLoaderProgress = 0.08;
+            let targetLoaderProgress = 0.08;
             let renderedLoaderProgress = 0;
             let loaderProgressFrameId = 0;
+            let loaderProgressFloatTimerId = 0;
 
             if (isSafari) {
                 root.classList.add('safari-bg-video');
+            }
+
+            function getLoaderFloatTarget() {
+                if (baseLoaderProgress >= 0.99) {
+                    return baseLoaderProgress;
+                }
+
+                return Math.min(0.99, baseLoaderProgress + 0.035);
+            }
+
+            function stopLoaderFloat() {
+                if (loaderProgressFloatTimerId) {
+                    window.clearInterval(loaderProgressFloatTimerId);
+                    loaderProgressFloatTimerId = 0;
+                }
+            }
+
+            function startLoaderFloat() {
+                stopLoaderFloat();
+                loaderProgressFloatTimerId = window.setInterval(function() {
+                    const floatTarget = getLoaderFloatTarget();
+
+                    if (floatTarget > targetLoaderProgress) {
+                        setLoaderProgress(floatTarget);
+                    }
+                }, 180);
             }
 
             function renderLoaderProgress() {
@@ -1005,7 +1039,6 @@
                     renderedLoaderProgress += progressDelta * 0.16;
                 }
 
-                root.style.setProperty('--loader-progress', renderedLoaderProgress.toFixed(3));
                 root.style.setProperty('--loader-progress-visual', Math.min(renderedLoaderProgress / 0.99, 1).toFixed(3));
 
                 if (startupLoaderProgressText) {
@@ -1028,6 +1061,7 @@
             }
 
             setLoaderProgress(0.08);
+            startLoaderFloat();
 
             function waitForImage(imageElement) {
                 return new Promise(function(resolve) {
@@ -1123,8 +1157,17 @@
 
                 const trackedSteps = startupSteps.map(function(stepPromise) {
                     return Promise.resolve(stepPromise).finally(function() {
+                        const completedIndex = completedSteps;
                         completedSteps += 1;
-                        setLoaderProgress(0.08 + (completedSteps / totalSteps) * 0.91);
+
+                        if (completedIndex < startupStepMilestones.length) {
+                            baseLoaderProgress = startupStepMilestones[completedIndex];
+                            setLoaderProgress(baseLoaderProgress);
+                        }
+
+                        if (completedSteps === totalSteps) {
+                            stopLoaderFloat();
+                        }
                     });
                 });
 
@@ -1150,10 +1193,10 @@
                 });
 
                 startupLoader.classList.add('is-complete');
-                root.classList.add('intro-complete');
+                stopLoaderFloat();
+                baseLoaderProgress = 1;
                 targetLoaderProgress = 1;
                 renderedLoaderProgress = 1;
-                root.style.setProperty('--loader-progress', '1');
                 root.style.setProperty('--loader-progress-visual', '1');
 
                 if (startupLoaderProgressText) {
@@ -1176,7 +1219,7 @@
 
                 startupLoader.hidden = true;
                 root.classList.add('intro-opened');
-                root.classList.remove('intro-loading', 'intro-complete', 'intro-opening');
+                root.classList.remove('intro-loading', 'intro-opening');
                 root.classList.remove('intro-prestart');
                 armAvatarHoverAfterPointerMove();
             }
@@ -1255,10 +1298,11 @@
             }
 
             runStartupIntro().catch(function() {
+                stopLoaderFloat();
                 if (startupLoader) {
                     startupLoader.hidden = true;
                 }
-                root.classList.remove('intro-loading', 'intro-prestart', 'hover-prewarm', 'intro-complete', 'intro-opening');
+                root.classList.remove('intro-loading', 'intro-prestart', 'hover-prewarm', 'intro-opening');
                 root.classList.add('intro-opened', 'about-intro-playing');
                 armAvatarHoverAfterPointerMove();
             });
