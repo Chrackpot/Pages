@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chrackpot - AIGC</title>
+    <title>Chrackpot AIGC</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&display=swap" rel="stylesheet">
     <script>
         if ('scrollRestoration' in history) {
@@ -184,6 +184,12 @@
             object-fit: cover;
             z-index: 0;
             pointer-events: none;
+        }
+        .safari-bg-video .about-video::-webkit-media-controls,
+        .safari-bg-video .about-video::-webkit-media-controls-panel,
+        .safari-bg-video .about-video::-webkit-media-controls-start-playback-button {
+            display: none !important;
+            -webkit-appearance: none;
         }
         #about::before {
             content: '';
@@ -638,7 +644,7 @@
 
         <!-- 全屏模块 1 -->
         <section class="fullscreen" id="about">
-            <video class="about-video" autoplay muted loop playsinline>
+            <video class="about-video" autoplay muted loop playsinline webkit-playsinline preload="auto" disablepictureinpicture disableremoteplayback aria-hidden="true">
                 <source src="Pic/bg.mp4" type="video/mp4">
             </video>
             <div>
@@ -709,6 +715,12 @@
         <script>
             const shouldReturnToAbout = window.__returnToAbout === true;
             const wheelScrollFactor = 0.62;
+            const aboutVideo = document.querySelector('.about-video');
+            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+            if (isSafari) {
+                document.documentElement.classList.add('safari-bg-video');
+            }
 
             function normalizeWheelDelta(event) {
                 if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) {
@@ -739,6 +751,28 @@
                 const navbar = document.querySelector('.navbar');
                 navbar.classList.remove('scrolled', 'white');
             });
+
+            if (aboutVideo) {
+                aboutVideo.muted = true;
+                aboutVideo.defaultMuted = true;
+                aboutVideo.playsInline = true;
+                aboutVideo.setAttribute('playsinline', '');
+                aboutVideo.setAttribute('webkit-playsinline', '');
+
+                const ensureBackgroundVideoPlayback = function() {
+                    const playPromise = aboutVideo.play();
+
+                    if (playPromise && typeof playPromise.catch === 'function') {
+                        playPromise.catch(function() {
+                            // Safari 在自动播放策略拒绝时会保留覆盖层；静音并等待下一次可播放事件重试。
+                        });
+                    }
+                };
+
+                aboutVideo.addEventListener('loadeddata', ensureBackgroundVideoPlayback, { once: true });
+                window.addEventListener('pageshow', ensureBackgroundVideoPlayback);
+                ensureBackgroundVideoPlayback();
+            }
 
             const avatarTrigger = document.querySelector('.about-avatar-trigger');
             const qrModal = document.querySelector('.qr-modal');
