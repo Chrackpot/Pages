@@ -76,10 +76,10 @@
             pointer-events: none;
         }
         .startup-loader-copy-loading {
-            bottom: clamp(14px, 4vh, 34px);
+            bottom: clamp(8px, 2.4vh, 22px);
         }
         .startup-loader-copy-progress {
-            top: clamp(14px, 4vh, 34px);
+            top: clamp(8px, 2.4vh, 22px);
             letter-spacing: 0.18em;
         }
         .startup-loader-panel-top {
@@ -436,7 +436,7 @@
             height: 140px;
             object-fit: cover;
             flex-shrink: 0;
-            border: 5px solid rgba(255, 255, 255, 0.6);
+            border: 5px solid #ffffff;
             transform: translateY(3px) scale(1);
             box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18), 0 3px 3px rgba(0, 0, 0, 0.22), 0 4px 12px rgba(6, 28, 34, 0.18);
             transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
@@ -791,6 +791,91 @@
                 height: 14px;
             }
         }
+        @media (max-width: 768px) and (orientation: portrait) {
+            .navbar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+                padding: 12px 14px 18px;
+            }
+            .navbar::before,
+            .navbar::after {
+                height: 112px;
+            }
+            .navbar .logo {
+                font-size: 0.9rem;
+                line-height: 1;
+            }
+            .navbar-links {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px 18px;
+                width: 100%;
+            }
+            .navbar a {
+                margin: 0;
+                font-size: 0.9rem;
+                line-height: 1.1;
+            }
+            .fullscreen {
+                padding: 32px 20px;
+            }
+            #about > div {
+                top: 44%;
+                width: min(88vw, 360px);
+            }
+            .about-header {
+                flex-direction: column;
+                align-items: center;
+                gap: 18px;
+            }
+            .about-avatar-trigger {
+                transform: translateX(0);
+            }
+            .about-avatar {
+                width: 108px;
+                height: 108px;
+            }
+            .about-text {
+                width: 100%;
+                height: auto;
+                margin-left: 0;
+                align-items: center;
+                text-align: center;
+                transform: translateX(0);
+                clip-path: none;
+            }
+            .about-name {
+                align-items: center;
+                gap: 4px;
+            }
+            .about-name-cn {
+                font-size: clamp(1.48rem, 6.8vw, 1.72rem);
+            }
+            .about-name-en {
+                font-size: clamp(1.02rem, 4.7vw, 1.16rem);
+            }
+            .about-details {
+                width: 100%;
+                margin-top: 10px;
+                padding-top: 16px;
+                align-items: center;
+            }
+            .about-details::before {
+                top: 8px;
+                left: 10%;
+                right: 10%;
+            }
+            .about-details p {
+                font-size: 0.94rem;
+                max-width: none;
+            }
+            .about-detail-line {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -808,7 +893,7 @@
         <!-- 导航栏 -->
         <nav class="navbar">
             <div class="logo" onclick="sessionStorage.setItem('returnToAbout', '1'); location.href = location.pathname + location.search;" style="cursor: pointer;">@Chrackpot</div>
-            <div>
+            <div class="navbar-links">
                 <a href="#about">关于我</a>
                 <a href="#skills">核心技能</a>
                 <a href="#projects">近期项目</a>
