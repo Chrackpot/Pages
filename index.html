@@ -315,10 +315,12 @@
             animation: aboutBlackOverlayFade 0.9s var(--motion-smooth-fade) forwards;
         }
         html.intro-opened #about::before,
+        html.intro-skip-complete #about::before,
         html.about-intro-playing #about::before {
             opacity: 1;
         }
         html.intro-opened #about::after,
+        html.intro-skip-complete #about::after,
         html.about-intro-playing #about::after {
             opacity: 0;
         }
@@ -665,6 +667,14 @@
                 aboutTextMaskReveal 1.02s var(--motion-smooth-mask) calc(var(--about-intro-delay) + 0.01s) forwards,
                 aboutTextFadeIn 0.16s var(--motion-smooth-fade) calc(var(--about-intro-delay) + 0.01s) forwards;
         }
+        html.intro-skip-complete .about-avatar-trigger {
+            transform: translateX(0);
+        }
+        html.intro-skip-complete .about-text {
+            opacity: 1;
+            transform: translateX(0);
+            clip-path: inset(-4px 0 -28px 0);
+        }
         html.hover-prewarm .about-avatar-trigger::before {
             opacity: 0;
             transform: translateY(3px) scale(1.08) rotate(0deg) translateZ(0);
@@ -992,6 +1002,7 @@
             const quickReadyThreshold = 120;
             const quickReadyMinimum = 300;
             const standardReadyMinimum = 650;
+            const introMaxWait = 3000;
             const fontReadyTimeout = 900;
             const startupStepWeights = [0.58, 0.22, 0.11];
             const startupStepMilestones = startupStepWeights.reduce(function(milestones, weight) {
@@ -1004,6 +1015,9 @@
             let renderedLoaderProgress = 0;
             let loaderProgressFrameId = 0;
             let loaderProgressFloatTimerId = 0;
+            let startupTimeoutId = 0;
+            let startupPresentationFinished = false;
+            let startupTimedOut = false;
 
             if (isSafari) {
                 root.classList.add('safari-bg-video');
@@ -1033,6 +1047,40 @@
                         setLoaderProgress(floatTarget);
                     }
                 }, 180);
+            }
+
+            function clearStartupTimeout() {
+                if (startupTimeoutId) {
+                    window.clearTimeout(startupTimeoutId);
+                    startupTimeoutId = 0;
+                }
+            }
+
+            function finalizeStartupWithoutAnimation() {
+                if (startupPresentationFinished) {
+                    return;
+                }
+
+                startupTimedOut = true;
+                startupPresentationFinished = true;
+                clearStartupTimeout();
+                stopLoaderFloat();
+                startupLoader.hidden = true;
+                root.classList.remove('intro-loading', 'intro-prestart', 'intro-opening', 'hover-prewarm');
+                root.classList.remove('about-intro-playing');
+                root.classList.add('intro-opened', 'intro-skip-complete');
+                warmQrModalAsset();
+                armAvatarHoverAfterPointerMove();
+            }
+
+            function finishStartupPresentation() {
+                if (startupPresentationFinished) {
+                    return false;
+                }
+
+                startupPresentationFinished = true;
+                clearStartupTimeout();
+                return true;
             }
 
             function renderLoaderProgress() {
@@ -1067,6 +1115,7 @@
 
             setLoaderProgress(0.08);
             startLoaderFloat();
+            startupTimeoutId = window.setTimeout(finalizeStartupWithoutAnimation, introMaxWait);
 
             function waitForImage(imageElement) {
                 return new Promise(function(resolve) {
@@ -1211,6 +1260,11 @@
                 });
 
                 await Promise.all(trackedSteps);
+
+                if (startupTimedOut) {
+                    return;
+                }
+
                 await warmAvatarHoverState();
 
                 const readyElapsed = performance.now() - introBootTimestamp;
@@ -1223,6 +1277,10 @@
                     });
                 }
 
+                if (startupTimedOut) {
+                    return;
+                }
+
                 root.classList.remove('hover-prewarm');
 
                 await new Promise(function(resolve) {
@@ -1230,6 +1288,10 @@
                         requestAnimationFrame(resolve);
                     });
                 });
+
+                if (startupTimedOut) {
+                    return;
+                }
 
                 startupLoader.classList.add('is-complete');
                 stopLoaderFloat();
@@ -1248,6 +1310,10 @@
                     });
                 });
 
+                if (startupTimedOut) {
+                    return;
+                }
+
                 startupLoader.classList.add('is-opening');
                 root.classList.add('intro-opening');
                 root.classList.add('about-intro-playing');
@@ -1256,9 +1322,13 @@
                     window.setTimeout(resolve, 860);
                 });
 
+                if (startupTimedOut || !finishStartupPresentation()) {
+                    return;
+                }
+
                 startupLoader.hidden = true;
                 root.classList.add('intro-opened');
-                root.classList.remove('intro-loading', 'intro-opening');
+                root.classList.remove('intro-loading', 'intro-opening', 'intro-skip-complete');
                 root.classList.remove('intro-prestart');
                 warmQrModalAsset();
                 armAvatarHoverAfterPointerMove();
@@ -1339,12 +1409,7 @@
 
             runStartupIntro().catch(function() {
                 stopLoaderFloat();
-                if (startupLoader) {
-                    startupLoader.hidden = true;
-                }
-                root.classList.remove('intro-loading', 'intro-prestart', 'hover-prewarm', 'intro-opening');
-                root.classList.add('intro-opened', 'about-intro-playing');
-                armAvatarHoverAfterPointerMove();
+                finalizeStartupWithoutAnimation();
             });
 
             window.addEventListener('wheel', function(event) {
