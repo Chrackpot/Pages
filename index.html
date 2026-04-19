@@ -6,7 +6,6 @@
     <title>Chrackpot AIGC</title>
     <link rel="preload" href="Pic/bg.mp4" as="video" type="video/mp4">
     <link rel="preload" href="Pic/头像.jpg" as="image">
-    <link rel="preload" href="Pic/微信二维码.jpg" as="image">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&display=swap" rel="stylesheet">
     <script>
         document.documentElement.classList.add('intro-loading', 'intro-prestart', 'hover-prewarm', 'hover-suppressed');
@@ -794,7 +793,7 @@
         @media (max-width: 768px) and (orientation: portrait) {
             .navbar {
                 flex-direction: column;
-                align-items: flex-start;
+                align-items: flex-end;
                 gap: 10px;
                 padding: 12px 14px 18px;
             }
@@ -803,12 +802,17 @@
                 height: 112px;
             }
             .navbar .logo {
+                position: fixed;
+                left: max(14px, env(safe-area-inset-left));
+                bottom: max(14px, env(safe-area-inset-bottom));
+                z-index: 1100;
                 font-size: 0.9rem;
                 line-height: 1;
             }
             .navbar-links {
                 display: flex;
                 flex-wrap: wrap;
+                justify-content: flex-end;
                 gap: 8px 18px;
                 width: 100%;
             }
@@ -939,7 +943,7 @@
         <div class="qr-modal" hidden aria-hidden="true">
             <div class="qr-modal-content">
                 <button class="qr-modal-close" type="button" aria-label="关闭二维码弹窗"></button>
-                <img class="qr-modal-image" src="Pic/微信二维码.jpg" alt="微信二维码">
+                <img class="qr-modal-image" data-src="Pic/微信二维码.jpg" alt="微信二维码">
             </div>
         </div>
 
@@ -988,7 +992,8 @@
             const quickReadyThreshold = 120;
             const quickReadyMinimum = 300;
             const standardReadyMinimum = 650;
-            const startupStepWeights = [0.46, 0.19, 0.12, 0.14];
+            const fontReadyTimeout = 900;
+            const startupStepWeights = [0.58, 0.22, 0.11];
             const startupStepMilestones = startupStepWeights.reduce(function(milestones, weight) {
                 const lastMilestone = milestones.length ? milestones[milestones.length - 1] : 0.08;
                 milestones.push(lastMilestone + weight);
@@ -1104,19 +1109,18 @@
                         if (playPromise && typeof playPromise.catch === 'function') {
                             playPromise.catch(function() {
                                 return undefined;
-                            }).finally(resolve);
-                            return;
+                            });
                         }
 
                         resolve();
                     };
 
-                    if (videoElement.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
+                    if (videoElement.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
                         finishVideoReady();
                         return;
                     }
 
-                    videoElement.addEventListener('canplay', finishVideoReady, { once: true });
+                    videoElement.addEventListener('loadeddata', finishVideoReady, { once: true });
                     videoElement.addEventListener('error', resolve, { once: true });
                 });
             }
@@ -1126,9 +1130,45 @@
                     return Promise.resolve();
                 }
 
-                return document.fonts.ready.catch(function() {
-                    return undefined;
-                });
+                return Promise.race([
+                    document.fonts.ready.catch(function() {
+                        return undefined;
+                    }),
+                    new Promise(function(resolve) {
+                        window.setTimeout(resolve, fontReadyTimeout);
+                    })
+                ]);
+            }
+
+            function warmQrModalAsset() {
+                if (!qrModalImage || (qrModalImage.complete && qrModalImage.naturalWidth > 0)) {
+                    return;
+                }
+
+                const qrModalImageSource = qrModalImage.dataset.src;
+
+                if (!qrModalImageSource) {
+                    return;
+                }
+
+                const assignQrModalSource = function() {
+                    if (!qrModalImage.getAttribute('src')) {
+                        qrModalImage.decoding = 'async';
+                        qrModalImage.loading = 'eager';
+                        qrModalImage.src = qrModalImageSource;
+                    }
+                };
+
+                if ('requestIdleCallback' in window) {
+                    window.requestIdleCallback(function() {
+                        assignQrModalSource();
+                    }, { timeout: 1500 });
+                    return;
+                }
+
+                window.setTimeout(function() {
+                    assignQrModalSource();
+                }, 300);
             }
 
             async function warmAvatarHoverState() {
@@ -1149,7 +1189,6 @@
                 const startupSteps = [
                     waitForVideo(aboutVideo),
                     waitForImage(aboutAvatarImage),
-                    waitForImage(qrModalImage),
                     waitForFonts()
                 ];
                 let completedSteps = 0;
@@ -1221,6 +1260,7 @@
                 root.classList.add('intro-opened');
                 root.classList.remove('intro-loading', 'intro-opening');
                 root.classList.remove('intro-prestart');
+                warmQrModalAsset();
                 armAvatarHoverAfterPointerMove();
             }
 
@@ -1317,6 +1357,7 @@
             }, { passive: false });
 
             function openQrModal() {
+                warmQrModalAsset();
                 qrModal.hidden = false;
                 qrModal.setAttribute('aria-hidden', 'false');
             }
