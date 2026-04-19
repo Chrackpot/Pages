@@ -13,6 +13,10 @@
             history.scrollRestoration = 'manual';
         }
         window.__returnToAbout = sessionStorage.getItem('returnToAbout') === '1';
+
+        if (!window.__returnToAbout && /^#(about|skills|projects|contact)$/i.test(window.location.hash) && history.replaceState) {
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
     </script>
     <style>
         /* 全局样式 */
@@ -1528,6 +1532,15 @@
 
             if (shouldReturnToAbout) {
                 sessionStorage.removeItem('returnToAbout');
+                document.documentElement.style.scrollBehavior = 'auto';
+                window.scrollTo(0, 0);
+                window.addEventListener('load', function() {
+                    window.scrollTo(0, 0);
+                    requestAnimationFrame(function() {
+                        document.documentElement.style.scrollBehavior = '';
+                    });
+                }, { once: true });
+            } else {
                 document.documentElement.style.scrollBehavior = 'auto';
                 window.scrollTo(0, 0);
                 window.addEventListener('load', function() {
