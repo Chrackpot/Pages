@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chrackpot AIGC</title>
+    <link rel="preload" href="Pic/bg.mp4" as="video" type="video/mp4">
+    <link rel="preload" href="Pic/头像.jpg" as="image">
+    <link rel="preload" href="Pic/微信二维码.jpg" as="image">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&display=swap" rel="stylesheet">
     <script>
+        document.documentElement.classList.add('intro-loading', 'intro-prestart', 'hover-prewarm', 'hover-suppressed');
         if ('scrollRestoration' in history) {
             history.scrollRestoration = 'manual';
         }
@@ -21,6 +25,7 @@
         html {
             scroll-behavior: smooth;
             scroll-snap-type: y mandatory; /* 恢复整屏强制吸附，避免半屏停留 */
+            scrollbar-gutter: stable;
         }
         body {
             font-family: 'Noto Serif SC', serif;
@@ -28,6 +33,95 @@
             color: #ffffff; /* 全局文字颜色改为白色 */
             line-height: 1.6;
             overflow-x: hidden;
+            overflow-y: scroll;
+            --motion-smooth-reveal: cubic-bezier(0.22, 0.76, 0.24, 1);
+            --motion-smooth-slide: cubic-bezier(0.24, 0.72, 0.26, 1);
+            --motion-smooth-mask: cubic-bezier(0.26, 0.78, 0.22, 1);
+            --motion-smooth-fade: cubic-bezier(0.3, 0.06, 0.24, 1);
+        }
+        html.intro-loading,
+        html.intro-loading body {
+            overflow: hidden;
+        }
+
+        .startup-loader {
+            position: fixed;
+            inset: 0;
+            z-index: 4000;
+            overflow: hidden;
+            background: transparent;
+            pointer-events: auto;
+        }
+        .startup-loader[hidden] {
+            display: none;
+        }
+        .startup-loader-panel {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: #000000;
+            transition: transform 0.82s var(--motion-smooth-reveal);
+            will-change: transform;
+        }
+        .startup-loader-copy {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.92);
+            font-size: 0.82rem;
+            letter-spacing: 0.34em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+        .startup-loader-copy-loading {
+            bottom: clamp(14px, 4vh, 34px);
+        }
+        .startup-loader-copy-progress {
+            top: clamp(14px, 4vh, 34px);
+            letter-spacing: 0.18em;
+        }
+        .startup-loader-panel-top {
+            top: 0;
+        }
+        .startup-loader-panel-bottom {
+            bottom: 0;
+        }
+        .startup-loader-progress {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100vw;
+            height: 1px;
+            transform: translate(-50%, -50%);
+            transform-origin: center;
+            transition: opacity 0.22s var(--motion-smooth-fade), transform 0.22s var(--motion-smooth-fade);
+        }
+        .startup-loader-progress-fill {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #ffffff;
+            transform: scaleX(var(--loader-progress-visual, 0));
+            transition: transform 0.28s var(--motion-smooth-fade);
+            will-change: transform;
+            transform-origin: center;
+        }
+        .startup-loader.is-complete .startup-loader-progress {
+            opacity: 0;
+            transform: translate(-50%, -50%) scaleX(1);
+        }
+        .startup-loader.is-opening {
+            pointer-events: none;
+        }
+        .startup-loader.is-opening .startup-loader-panel-top {
+            transform: translateY(-100%);
+        }
+        .startup-loader.is-opening .startup-loader-panel-bottom {
+            transform: translateY(100%);
         }
 
         /* 全屏模块样式 */
@@ -173,7 +267,7 @@
             --about-text-intro-offset: 420px;
             --about-text-mask-offset: 400px;
             --about-text-overlap: 4px;
-            --about-intro-delay: 0.5s;
+            --about-intro-delay: 0s;
             color: #ffffff !important; /* 强制设置文字为纯白色 */
         }
         .about-video {
@@ -201,7 +295,6 @@
             background: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.08) 28%, rgba(0, 0, 0, 0.22) 58%, rgba(0, 0, 0, 0.52) 100%);
             z-index: 1;
             opacity: 0;
-            animation: aboutVignetteReveal 2s ease forwards;
             pointer-events: none;
         }
         #about::after {
@@ -214,8 +307,21 @@
             background: rgba(0, 0, 0, 0.9);
             z-index: 1;
             opacity: 1;
-            animation: aboutBlackOverlayFade 2s ease forwards;
             pointer-events: none;
+        }
+        html.intro-opening #about::before {
+            animation: aboutVignetteReveal 0.9s var(--motion-smooth-fade) forwards;
+        }
+        html.intro-opening #about::after {
+            animation: aboutBlackOverlayFade 0.9s var(--motion-smooth-fade) forwards;
+        }
+        html.intro-opened #about::before,
+        html.about-intro-playing #about::before {
+            opacity: 1;
+        }
+        html.intro-opened #about::after,
+        html.about-intro-playing #about::after {
+            opacity: 0;
         }
         @keyframes aboutVignetteReveal {
             0% {
@@ -258,7 +364,7 @@
             border: 0;
             cursor: pointer;
             transform: translateX(var(--about-intro-shift));
-            animation: aboutAvatarSlide 1.18s cubic-bezier(0.22, 0.82, 0.22, 1) var(--about-intro-delay) forwards;
+            will-change: transform;
         }
         .about-avatar-trigger::before {
             content: '';
@@ -306,6 +412,7 @@
             transform: translateY(3px) scale(0.82) rotate(0deg);
             transition: opacity 0.25s ease, transform 0.25s ease;
             pointer-events: none;
+            will-change: opacity, transform, filter;
         }
         .about-avatar-trigger::after {
             content: '';
@@ -320,6 +427,7 @@
             transform: translateY(3px) scale(0.96);
             transition: opacity 0.25s ease, transform 0.25s ease, filter 0.25s ease;
             pointer-events: none;
+            will-change: opacity, transform, filter;
         }
         .about-avatar {
             position: relative;
@@ -332,6 +440,7 @@
             transform: translateY(3px) scale(1);
             box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18), 0 3px 3px rgba(0, 0, 0, 0.22), 0 4px 12px rgba(6, 28, 34, 0.18);
             transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+            will-change: transform, box-shadow, border-color;
         }
         .about-avatar-trigger:hover::before,
         .about-avatar-trigger:focus-visible::before {
@@ -488,11 +597,10 @@
             height: 140px;
             margin-left: calc(-1 * var(--about-text-overlap));
             overflow: visible;
+            opacity: 0;
             transform: translateX(calc(-1 * var(--about-text-intro-offset)));
             clip-path: inset(-4px 0 -28px var(--about-text-mask-offset));
-            animation:
-                aboutTextSlide 1.18s cubic-bezier(0.2, 0.88, 0.24, 1) calc(var(--about-intro-delay) + 0.01s) forwards,
-                aboutTextMaskReveal 1.02s cubic-bezier(0.16, 0.9, 0.2, 1) calc(var(--about-intro-delay) + 0.01s) forwards;
+            will-change: opacity, transform, clip-path;
         }
         .about-name {
             display: flex;
@@ -544,6 +652,53 @@
             color: rgba(255, 255, 255, 0.8);
             filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3)) drop-shadow(0 2px 5px rgba(6, 28, 34, 0.2));
         }
+        html.intro-loading .about-avatar-trigger,
+        html.intro-prestart .about-avatar-trigger,
+        html.intro-opening .about-avatar-trigger {
+            pointer-events: none;
+        }
+        html.about-intro-playing .about-avatar-trigger {
+            animation: aboutAvatarSlide 1.18s var(--motion-smooth-slide) var(--about-intro-delay) forwards;
+        }
+        html.about-intro-playing .about-text {
+            animation:
+                aboutTextSlide 1.18s var(--motion-smooth-slide) calc(var(--about-intro-delay) + 0.01s) forwards,
+                aboutTextMaskReveal 1.02s var(--motion-smooth-mask) calc(var(--about-intro-delay) + 0.01s) forwards,
+                aboutTextFadeIn 0.16s var(--motion-smooth-fade) calc(var(--about-intro-delay) + 0.01s) forwards;
+        }
+        html.hover-prewarm .about-avatar-trigger::before {
+            opacity: 0;
+            transform: translateY(3px) scale(1.08) rotate(0deg) translateZ(0);
+            animation: auroraBeamOrbit 28.8s ease-in-out infinite, auroraBeamPulse 2.3s ease-in-out infinite alternate;
+        }
+        html.hover-prewarm .about-avatar-trigger::after {
+            opacity: 0;
+            transform: translateY(3px) scale(1.05) translateZ(0);
+            filter: blur(9px) brightness(1.18) saturate(1.2);
+            animation: auroraGlowBreath 4.8s ease-in-out infinite;
+        }
+        html.hover-prewarm .about-avatar-trigger::before,
+        html.hover-prewarm .about-avatar-trigger::after {
+            transition: none;
+        }
+        html.hover-suppressed .about-avatar-trigger:hover::before,
+        html.hover-suppressed .about-avatar-trigger:hover::after,
+        html.hover-suppressed .about-avatar-trigger:hover .about-avatar {
+            opacity: 0;
+            animation: none;
+        }
+        html.hover-suppressed .about-avatar-trigger:hover::before {
+            transform: translateY(3px) scale(0.82) rotate(0deg);
+        }
+        html.hover-suppressed .about-avatar-trigger:hover::after {
+            transform: translateY(3px) scale(0.96);
+            filter: blur(10px) saturate(1.12);
+        }
+        html.hover-suppressed .about-avatar-trigger:hover .about-avatar {
+            transform: translateY(3px) scale(1);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18), 0 3px 3px rgba(0, 0, 0, 0.22), 0 4px 12px rgba(6, 28, 34, 0.18);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
         @keyframes aboutAvatarSlide {
             0% {
                 transform: translateX(var(--about-intro-shift));
@@ -566,6 +721,14 @@
             }
             100% {
                 clip-path: inset(-4px 0 -28px 0);
+            }
+        }
+        @keyframes aboutTextFadeIn {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
             }
         }
         #about h1, #about p {
@@ -631,6 +794,17 @@
     </style>
 </head>
 <body>
+        <div class="startup-loader" aria-hidden="true">
+            <div class="startup-loader-panel startup-loader-panel-top">
+                <div class="startup-loader-copy startup-loader-copy-loading">Loading</div>
+            </div>
+            <div class="startup-loader-panel startup-loader-panel-bottom">
+                <div class="startup-loader-copy startup-loader-copy-progress">008%</div>
+            </div>
+            <div class="startup-loader-progress">
+                <span class="startup-loader-progress-fill"></span>
+            </div>
+        </div>
         <!-- 导航栏 -->
         <nav class="navbar">
             <div class="logo" onclick="sessionStorage.setItem('returnToAbout', '1'); location.href = location.pathname + location.search;" style="cursor: pointer;">@Chrackpot</div>
@@ -715,11 +889,231 @@
         <script>
             const shouldReturnToAbout = window.__returnToAbout === true;
             const wheelScrollFactor = 0.62;
+            const root = document.documentElement;
+            const startupLoader = document.querySelector('.startup-loader');
+            const avatarTrigger = document.querySelector('.about-avatar-trigger');
+            const qrModal = document.querySelector('.qr-modal');
+            const qrModalClose = document.querySelector('.qr-modal-close');
             const aboutVideo = document.querySelector('.about-video');
+            const aboutAvatarImage = document.querySelector('.about-avatar');
+            const qrModalImage = document.querySelector('.qr-modal-image');
+            const startupLoaderProgressText = document.querySelector('.startup-loader-copy-progress');
             const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+            const introBootTimestamp = performance.now();
+            const quickReadyThreshold = 120;
+            const quickReadyMinimum = 300;
+            const standardReadyMinimum = 650;
+            let targetLoaderProgress = 0;
+            let renderedLoaderProgress = 0;
+            let loaderProgressFrameId = 0;
 
             if (isSafari) {
-                document.documentElement.classList.add('safari-bg-video');
+                root.classList.add('safari-bg-video');
+            }
+
+            function renderLoaderProgress() {
+                const progressDelta = targetLoaderProgress - renderedLoaderProgress;
+
+                if (Math.abs(progressDelta) < 0.001) {
+                    renderedLoaderProgress = targetLoaderProgress;
+                } else {
+                    renderedLoaderProgress += progressDelta * 0.16;
+                }
+
+                root.style.setProperty('--loader-progress', renderedLoaderProgress.toFixed(3));
+                root.style.setProperty('--loader-progress-visual', Math.min(renderedLoaderProgress / 0.99, 1).toFixed(3));
+
+                if (startupLoaderProgressText) {
+                    startupLoaderProgressText.textContent = Math.round(renderedLoaderProgress * 100) + '%';
+                }
+
+                if (Math.abs(targetLoaderProgress - renderedLoaderProgress) >= 0.001) {
+                    loaderProgressFrameId = window.requestAnimationFrame(renderLoaderProgress);
+                } else {
+                    loaderProgressFrameId = 0;
+                }
+            }
+
+            function setLoaderProgress(progressValue) {
+                targetLoaderProgress = Math.max(0, Math.min(1, progressValue));
+
+                if (!loaderProgressFrameId) {
+                    loaderProgressFrameId = window.requestAnimationFrame(renderLoaderProgress);
+                }
+            }
+
+            setLoaderProgress(0.08);
+
+            function waitForImage(imageElement) {
+                return new Promise(function(resolve) {
+                    if (!imageElement) {
+                        resolve();
+                        return;
+                    }
+
+                    const finishImageReady = function() {
+                        if (typeof imageElement.decode === 'function') {
+                            imageElement.decode().catch(function() {
+                                return undefined;
+                            }).finally(resolve);
+                            return;
+                        }
+
+                        resolve();
+                    };
+
+                    if (imageElement.complete && imageElement.naturalWidth > 0) {
+                        finishImageReady();
+                        return;
+                    }
+
+                    imageElement.addEventListener('load', finishImageReady, { once: true });
+                    imageElement.addEventListener('error', resolve, { once: true });
+                });
+            }
+
+            function waitForVideo(videoElement) {
+                return new Promise(function(resolve) {
+                    if (!videoElement) {
+                        resolve();
+                        return;
+                    }
+
+                    const finishVideoReady = function() {
+                        const playPromise = videoElement.play();
+
+                        if (playPromise && typeof playPromise.catch === 'function') {
+                            playPromise.catch(function() {
+                                return undefined;
+                            }).finally(resolve);
+                            return;
+                        }
+
+                        resolve();
+                    };
+
+                    if (videoElement.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
+                        finishVideoReady();
+                        return;
+                    }
+
+                    videoElement.addEventListener('canplay', finishVideoReady, { once: true });
+                    videoElement.addEventListener('error', resolve, { once: true });
+                });
+            }
+
+            function waitForFonts() {
+                if (!document.fonts || typeof document.fonts.ready === 'undefined') {
+                    return Promise.resolve();
+                }
+
+                return document.fonts.ready.catch(function() {
+                    return undefined;
+                });
+            }
+
+            async function warmAvatarHoverState() {
+                if (!avatarTrigger) {
+                    return;
+                }
+
+                await new Promise(function(resolve) {
+                    requestAnimationFrame(function() {
+                        requestAnimationFrame(resolve);
+                    });
+                });
+
+                avatarTrigger.getBoundingClientRect();
+            }
+
+            async function runStartupIntro() {
+                const startupSteps = [
+                    waitForVideo(aboutVideo),
+                    waitForImage(aboutAvatarImage),
+                    waitForImage(qrModalImage),
+                    waitForFonts()
+                ];
+                let completedSteps = 0;
+                const totalSteps = startupSteps.length;
+
+                const trackedSteps = startupSteps.map(function(stepPromise) {
+                    return Promise.resolve(stepPromise).finally(function() {
+                        completedSteps += 1;
+                        setLoaderProgress(0.08 + (completedSteps / totalSteps) * 0.91);
+                    });
+                });
+
+                await Promise.all(trackedSteps);
+                await warmAvatarHoverState();
+
+                const readyElapsed = performance.now() - introBootTimestamp;
+                const minimumVisibleDuration = readyElapsed <= quickReadyThreshold ? quickReadyMinimum : standardReadyMinimum;
+                const remainingVisibleDuration = Math.max(0, minimumVisibleDuration - readyElapsed);
+
+                if (remainingVisibleDuration > 0) {
+                    await new Promise(function(resolve) {
+                        window.setTimeout(resolve, remainingVisibleDuration);
+                    });
+                }
+
+                root.classList.remove('hover-prewarm');
+
+                await new Promise(function(resolve) {
+                    requestAnimationFrame(function() {
+                        requestAnimationFrame(resolve);
+                    });
+                });
+
+                startupLoader.classList.add('is-complete');
+                root.classList.add('intro-complete');
+                targetLoaderProgress = 1;
+                renderedLoaderProgress = 1;
+                root.style.setProperty('--loader-progress', '1');
+                root.style.setProperty('--loader-progress-visual', '1');
+
+                if (startupLoaderProgressText) {
+                    startupLoaderProgressText.textContent = '100%';
+                }
+
+                await new Promise(function(resolve) {
+                    requestAnimationFrame(function() {
+                        requestAnimationFrame(resolve);
+                    });
+                });
+
+                startupLoader.classList.add('is-opening');
+                root.classList.add('intro-opening');
+                root.classList.add('about-intro-playing');
+
+                await new Promise(function(resolve) {
+                    window.setTimeout(resolve, 860);
+                });
+
+                startupLoader.hidden = true;
+                root.classList.add('intro-opened');
+                root.classList.remove('intro-loading', 'intro-complete', 'intro-opening');
+                root.classList.remove('intro-prestart');
+                armAvatarHoverAfterPointerMove();
+            }
+
+            function armAvatarHoverAfterPointerMove() {
+                const hoverMediaQuery = window.matchMedia ? window.matchMedia('(hover: hover) and (pointer: fine)') : null;
+
+                if (!hoverMediaQuery || !hoverMediaQuery.matches) {
+                    root.classList.remove('hover-suppressed');
+                    return;
+                }
+
+                const unlockHover = function(event) {
+                    if (event.pointerType && event.pointerType !== 'mouse') {
+                        return;
+                    }
+
+                    root.classList.remove('hover-suppressed');
+                    window.removeEventListener('pointermove', unlockHover, true);
+                };
+
+                window.addEventListener('pointermove', unlockHover, true);
             }
 
             function normalizeWheelDelta(event) {
@@ -758,6 +1152,7 @@
                 aboutVideo.playsInline = true;
                 aboutVideo.setAttribute('playsinline', '');
                 aboutVideo.setAttribute('webkit-playsinline', '');
+                aboutVideo.setAttribute('preload', 'auto');
 
                 const ensureBackgroundVideoPlayback = function() {
                     const playPromise = aboutVideo.play();
@@ -774,9 +1169,14 @@
                 ensureBackgroundVideoPlayback();
             }
 
-            const avatarTrigger = document.querySelector('.about-avatar-trigger');
-            const qrModal = document.querySelector('.qr-modal');
-            const qrModalClose = document.querySelector('.qr-modal-close');
+            runStartupIntro().catch(function() {
+                if (startupLoader) {
+                    startupLoader.hidden = true;
+                }
+                root.classList.remove('intro-loading', 'intro-prestart', 'hover-prewarm', 'intro-complete', 'intro-opening');
+                root.classList.add('intro-opened', 'about-intro-playing');
+                armAvatarHoverAfterPointerMove();
+            });
 
             window.addEventListener('wheel', function(event) {
                 if (event.ctrlKey || Math.abs(event.deltaY) <= Math.abs(event.deltaX) || !qrModal.hidden) {
