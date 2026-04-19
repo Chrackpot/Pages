@@ -342,6 +342,36 @@
             cursor: pointer;
             transform: translateX(var(--about-intro-shift));
             will-change: transform;
+            perspective: 1200px;
+            --avatar-hover-rotate-x: 0deg;
+            --avatar-hover-rotate-y: 0deg;
+            --avatar-card-base-rotate-y: 0deg;
+        }
+        .about-avatar-card {
+            position: relative;
+            z-index: 1;
+            width: 140px;
+            height: 140px;
+            transform-origin: center center;
+            transform-style: preserve-3d;
+            transform: rotateX(var(--avatar-hover-rotate-x)) rotateY(calc(var(--avatar-card-base-rotate-y) + var(--avatar-hover-rotate-y)));
+            transition: transform 0.28s var(--motion-smooth-slide);
+            will-change: transform;
+        }
+        .about-avatar-trigger.is-flipped .about-avatar-card {
+            --avatar-card-base-rotate-y: 180deg;
+        }
+        .about-avatar-face {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .about-avatar-face-back {
+            transform: rotateY(180deg);
         }
         .about-avatar-trigger::after {
             content: '';
@@ -361,8 +391,8 @@
         .about-avatar {
             position: relative;
             z-index: 1;
-            width: 140px;
-            height: 140px;
+            width: 100%;
+            height: 100%;
             object-fit: cover;
             flex-shrink: 0;
             border: 5px solid #ffffff;
@@ -371,18 +401,40 @@
             transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
             will-change: transform, box-shadow, border-color;
         }
+        .about-avatar-qr {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border: 5px solid rgba(255, 255, 255, 0.94);
+            background: rgba(0, 0, 0, 0.5);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18), 0 3px 3px rgba(0, 0, 0, 0.22), 0 4px 12px rgba(6, 28, 34, 0.18);
+        }
         .about-avatar-trigger:hover::after,
+        .about-avatar-trigger.is-hover-active::after,
         .about-avatar-trigger:focus-visible::after {
             opacity: 0.68;
             transform: translateY(3px) scale(1.05);
             filter: blur(9px) brightness(1.18) saturate(1.2);
             animation: auroraGlowBreath 4.8s ease-in-out infinite;
         }
+        .about-avatar-trigger.is-flipped::after {
+            opacity: 0.18;
+            animation: none;
+        }
         .about-avatar-trigger:hover .about-avatar,
+        .about-avatar-trigger.is-hover-active .about-avatar,
         .about-avatar-trigger:focus-visible .about-avatar {
             transform: translateY(3px) scale(1.04);
             box-shadow: 0 0 10px rgba(255, 255, 255, 0.24), 0 0 22px rgba(170, 255, 249, 0.34), 0 0 42px rgba(56, 255, 240, 0.26);
             border-color: rgba(255, 255, 255, 1);
+        }
+        .about-avatar-trigger.is-flipped:hover .about-avatar,
+        .about-avatar-trigger.is-flipped.is-hover-active .about-avatar,
+        .about-avatar-trigger.is-flipped:focus-visible .about-avatar {
+            transform: translateY(3px) scale(1);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18), 0 3px 3px rgba(0, 0, 0, 0.22), 0 4px 12px rgba(6, 28, 34, 0.18);
+            border-color: #ffffff;
         }
         .about-avatar-trigger:focus-visible {
             outline: none;
@@ -549,7 +601,8 @@
         }
         html.intro-loading .about-avatar-trigger,
         html.intro-prestart .about-avatar-trigger,
-        html.intro-opening .about-avatar-trigger {
+        html.intro-opening .about-avatar-trigger,
+        html.about-intro-playing .about-avatar-trigger {
             pointer-events: none;
         }
         html.about-intro-playing .about-avatar-trigger {
@@ -560,6 +613,14 @@
                 aboutTextSlide 1.18s var(--motion-smooth-slide) calc(var(--about-intro-delay) + 0.01s) forwards,
                 aboutTextMaskReveal 1.02s var(--motion-smooth-mask) calc(var(--about-intro-delay) + 0.01s) forwards,
                 aboutTextFadeIn 0.16s var(--motion-smooth-fade) calc(var(--about-intro-delay) + 0.01s) forwards;
+        }
+        html.intro-opened .about-avatar-trigger {
+            transform: translateX(0);
+        }
+        html.intro-opened .about-text {
+            opacity: 1;
+            transform: translateX(0);
+            clip-path: inset(-4px 0 -28px 0);
         }
         html.intro-skip-complete .about-avatar-trigger {
             transform: translateX(0);
@@ -579,15 +640,19 @@
             transition: none;
         }
         html.hover-suppressed .about-avatar-trigger:hover::after,
-        html.hover-suppressed .about-avatar-trigger:hover .about-avatar {
+        html.hover-suppressed .about-avatar-trigger.is-hover-active::after,
+        html.hover-suppressed .about-avatar-trigger:hover .about-avatar,
+        html.hover-suppressed .about-avatar-trigger.is-hover-active .about-avatar {
             opacity: 0;
             animation: none;
         }
-        html.hover-suppressed .about-avatar-trigger:hover::after {
+        html.hover-suppressed .about-avatar-trigger:hover::after,
+        html.hover-suppressed .about-avatar-trigger.is-hover-active::after {
             transform: translateY(3px) scale(0.96);
             filter: blur(10px) saturate(1.12);
         }
-        html.hover-suppressed .about-avatar-trigger:hover .about-avatar {
+        html.hover-suppressed .about-avatar-trigger:hover .about-avatar,
+        html.hover-suppressed .about-avatar-trigger.is-hover-active .about-avatar {
             transform: translateY(3px) scale(1);
             box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18), 0 3px 3px rgba(0, 0, 0, 0.22), 0 4px 12px rgba(6, 28, 34, 0.18);
             border-color: rgba(255, 255, 255, 0.6);
@@ -658,6 +723,10 @@
                 gap: 16px;
             }
             .about-avatar {
+                width: 100%;
+                height: 100%;
+            }
+            .about-avatar-card {
                 width: 112px;
                 height: 112px;
             }
@@ -731,6 +800,10 @@
                 transform: translateX(0);
             }
             .about-avatar {
+                width: 100%;
+                height: 100%;
+            }
+            .about-avatar-card {
                 width: 108px;
                 height: 108px;
             }
@@ -806,8 +879,15 @@
             </video>
             <div>
                 <div class="about-header">
-                    <button class="about-avatar-trigger" type="button" aria-label="打开微信二维码">
-                        <img class="about-avatar" src="Pic/头像.jpg" alt="王去病头像">
+                    <button class="about-avatar-trigger" type="button" aria-label="显示微信二维码" aria-pressed="false">
+                        <span class="about-avatar-card" aria-hidden="true">
+                            <span class="about-avatar-face about-avatar-face-front">
+                                <img class="about-avatar" src="Pic/头像.jpg" alt="王去病头像">
+                            </span>
+                            <span class="about-avatar-face about-avatar-face-back">
+                                <img class="about-avatar-qr" data-src="Pic/微信二维码.jpg" alt="微信二维码">
+                            </span>
+                        </span>
                     </button>
                     <div class="about-text">
                         <div class="about-name">
@@ -874,11 +954,15 @@
             const wheelScrollFactor = 0.62;
             const root = document.documentElement;
             const startupLoader = document.querySelector('.startup-loader');
+            const aboutSection = document.querySelector('#about');
             const avatarTrigger = document.querySelector('.about-avatar-trigger');
+            const avatarCard = document.querySelector('.about-avatar-card');
             const qrModal = document.querySelector('.qr-modal');
             const qrModalClose = document.querySelector('.qr-modal-close');
+            const contactRevealButton = document.querySelector('#contact .btn[href="#about"]');
             const aboutVideo = document.querySelector('.about-video');
             const aboutAvatarImage = document.querySelector('.about-avatar');
+            const aboutAvatarQrImage = document.querySelector('.about-avatar-qr');
             const qrModalImage = document.querySelector('.qr-modal-image');
             const startupLoaderProgressText = document.querySelector('.startup-loader-copy-progress');
             const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
@@ -887,7 +971,13 @@
             const quickReadyMinimum = 300;
             const standardReadyMinimum = 650;
             const introMaxWait = 3000;
+            const startupRevealDuration = 860;
+            const aboutIntroDuration = 1180;
+            const avatarContactFlipDuration = 880;
+            const contactRevealScrollSettleFrames = 10;
             const fontReadyTimeout = 900;
+            const avatarHoverRangeViewportRatio = 0.5;
+            const avatarHoverMaxTiltDegrees = 90;
             const startupStepWeights = [0.58, 0.22, 0.11];
             const startupStepMilestones = startupStepWeights.reduce(function(milestones, weight) {
                 const lastMilestone = milestones.length ? milestones[milestones.length - 1] : 0.08;
@@ -900,6 +990,9 @@
             let loaderProgressFrameId = 0;
             let loaderProgressFloatTimerId = 0;
             let startupTimeoutId = 0;
+            let avatarContactRevealTimerId = 0;
+            let avatarContactFlipAnimation = null;
+            let avatarProgrammaticSpinInProgress = false;
             let startupPresentationFinished = false;
             let startupTimedOut = false;
 
@@ -1074,34 +1167,194 @@
             }
 
             function warmQrModalAsset() {
-                if (!qrModalImage || (qrModalImage.complete && qrModalImage.naturalWidth > 0)) {
-                    return;
-                }
-
-                const qrModalImageSource = qrModalImage.dataset.src;
-
-                if (!qrModalImageSource) {
-                    return;
-                }
-
-                const assignQrModalSource = function() {
-                    if (!qrModalImage.getAttribute('src')) {
-                        qrModalImage.decoding = 'async';
-                        qrModalImage.loading = 'eager';
-                        qrModalImage.src = qrModalImageSource;
+                const assignAssetImage = function(imageElement) {
+                    if (!imageElement || (imageElement.complete && imageElement.naturalWidth > 0)) {
+                        return;
                     }
+
+                    const imageSource = imageElement.dataset.src;
+
+                    if (!imageSource || imageElement.getAttribute('src')) {
+                        return;
+                    }
+
+                    imageElement.decoding = 'async';
+                    imageElement.loading = 'eager';
+                    imageElement.src = imageSource;
+                };
+
+                const assignQrAssets = function() {
+                    assignAssetImage(qrModalImage);
+                    assignAssetImage(aboutAvatarQrImage);
                 };
 
                 if ('requestIdleCallback' in window) {
                     window.requestIdleCallback(function() {
-                        assignQrModalSource();
+                        assignQrAssets();
                     }, { timeout: 1500 });
                     return;
                 }
 
                 window.setTimeout(function() {
-                    assignQrModalSource();
+                    assignQrAssets();
                 }, 300);
+            }
+
+            function shouldUseAvatarFlip() {
+                return !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+            }
+
+            function clearAvatarContactRevealTimer() {
+                if (avatarContactRevealTimerId) {
+                    window.clearTimeout(avatarContactRevealTimerId);
+                    avatarContactRevealTimerId = 0;
+                }
+            }
+
+            function waitForScrollToSettle(onSettled) {
+                let lastScrollY = window.scrollY;
+                let stableFrameCount = 0;
+
+                const checkScrollStability = function() {
+                    const currentScrollY = window.scrollY;
+
+                    if (Math.abs(currentScrollY - lastScrollY) < 0.5) {
+                        stableFrameCount += 1;
+                    } else {
+                        stableFrameCount = 0;
+                        lastScrollY = currentScrollY;
+                    }
+
+                    if (stableFrameCount >= contactRevealScrollSettleFrames) {
+                        onSettled();
+                        return;
+                    }
+
+                    avatarContactRevealTimerId = window.setTimeout(function() {
+                        requestAnimationFrame(checkScrollStability);
+                    }, 16);
+                };
+
+                requestAnimationFrame(checkScrollStability);
+            }
+
+            function resetAvatarHoverTilt() {
+                if (!avatarTrigger) {
+                    return;
+                }
+
+                avatarTrigger.classList.remove('is-hover-active');
+                avatarTrigger.style.setProperty('--avatar-hover-rotate-x', '0deg');
+                avatarTrigger.style.setProperty('--avatar-hover-rotate-y', '0deg');
+            }
+
+            function updateAvatarHoverTilt(pointerClientX, pointerClientY) {
+                if (!avatarTrigger || !shouldUseAvatarFlip()) {
+                    resetAvatarHoverTilt();
+                    return;
+                }
+
+                if (avatarProgrammaticSpinInProgress || root.classList.contains('hover-suppressed') || root.classList.contains('intro-loading') || root.classList.contains('intro-opening') || root.classList.contains('about-intro-playing')) {
+                    resetAvatarHoverTilt();
+                    return;
+                }
+
+                const avatarRect = avatarTrigger.getBoundingClientRect();
+
+                if (!avatarRect.width || !avatarRect.height) {
+                    resetAvatarHoverTilt();
+                    return;
+                }
+
+                const centerX = avatarRect.left + avatarRect.width / 2;
+                const centerY = avatarRect.top + avatarRect.height / 2;
+                const rangeX = Math.max(avatarRect.width * 0.5, window.innerWidth * avatarHoverRangeViewportRatio * 0.5);
+                const rangeY = Math.max(avatarRect.height * 0.5, window.innerHeight * avatarHoverRangeViewportRatio * 0.5);
+                const normalizedX = (pointerClientX - centerX) / rangeX;
+                const normalizedY = (pointerClientY - centerY) / rangeY;
+                const distance = Math.sqrt((normalizedX * normalizedX) + (normalizedY * normalizedY));
+
+                if (distance >= 1) {
+                    resetAvatarHoverTilt();
+                    return;
+                }
+
+                const proximity = 1 - distance;
+                const rotateY = Math.max(-avatarHoverMaxTiltDegrees, Math.min(avatarHoverMaxTiltDegrees, -normalizedX * avatarHoverMaxTiltDegrees * proximity));
+                const rotateX = Math.max(-avatarHoverMaxTiltDegrees, Math.min(avatarHoverMaxTiltDegrees, normalizedY * avatarHoverMaxTiltDegrees * proximity));
+
+                avatarTrigger.classList.add('is-hover-active');
+                avatarTrigger.style.setProperty('--avatar-hover-rotate-x', rotateX.toFixed(2) + 'deg');
+                avatarTrigger.style.setProperty('--avatar-hover-rotate-y', rotateY.toFixed(2) + 'deg');
+            }
+
+            function setAvatarFlipped(isFlipped) {
+                if (!avatarTrigger) {
+                    return;
+                }
+
+                avatarTrigger.classList.toggle('is-flipped', isFlipped);
+                avatarTrigger.setAttribute('aria-pressed', isFlipped ? 'true' : 'false');
+                avatarTrigger.setAttribute('aria-label', isFlipped ? '收起微信二维码' : '显示微信二维码');
+            }
+
+            function buildAvatarCardTransform(rotateX, rotateY) {
+                return 'rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg)';
+            }
+
+            function playAvatarContactRevealAnimation() {
+                if (!avatarTrigger || !avatarCard) {
+                    return;
+                }
+
+                warmQrModalAsset();
+                resetAvatarHoverTilt();
+                clearAvatarContactRevealTimer();
+
+                if (avatarContactFlipAnimation) {
+                    avatarContactFlipAnimation.cancel();
+                    avatarContactFlipAnimation = null;
+                }
+
+                const wasFlipped = avatarTrigger.classList.contains('is-flipped');
+                const startRotateY = wasFlipped ? 180 : 0;
+                const targetRotateY = wasFlipped ? 540 : 180;
+
+                avatarProgrammaticSpinInProgress = true;
+                setAvatarFlipped(wasFlipped);
+
+                if (typeof avatarCard.animate === 'function') {
+                    avatarContactFlipAnimation = avatarCard.animate([
+                        { transform: buildAvatarCardTransform(0, startRotateY) },
+                        { transform: buildAvatarCardTransform(0, targetRotateY) }
+                    ], {
+                        duration: avatarContactFlipDuration,
+                        easing: 'cubic-bezier(0.22, 0.76, 0.24, 1)',
+                        fill: 'forwards'
+                    });
+
+                    avatarContactFlipAnimation.onfinish = function() {
+                        const completedAnimation = avatarContactFlipAnimation;
+
+                        setAvatarFlipped(true);
+                        avatarContactFlipAnimation = null;
+                        avatarProgrammaticSpinInProgress = false;
+
+                        if (completedAnimation) {
+                            completedAnimation.cancel();
+                        }
+                    };
+
+                    avatarContactFlipAnimation.oncancel = function() {
+                        avatarContactFlipAnimation = null;
+                        avatarProgrammaticSpinInProgress = false;
+                    };
+
+                    return;
+                }
+
+                setAvatarFlipped(true);
+                avatarProgrammaticSpinInProgress = false;
             }
 
             async function warmAvatarHoverState() {
@@ -1203,7 +1456,7 @@
                 root.classList.add('about-intro-playing');
 
                 await new Promise(function(resolve) {
-                    window.setTimeout(resolve, 860);
+                    window.setTimeout(resolve, startupRevealDuration);
                 });
 
                 if (startupTimedOut || !finishStartupPresentation()) {
@@ -1216,6 +1469,10 @@
                 root.classList.remove('intro-prestart');
                 warmQrModalAsset();
                 armAvatarHoverAfterPointerMove();
+
+                window.setTimeout(function() {
+                    root.classList.remove('about-intro-playing');
+                }, Math.max(0, aboutIntroDuration - startupRevealDuration));
             }
 
             function armAvatarHoverAfterPointerMove() {
@@ -1223,6 +1480,7 @@
 
                 if (!hoverMediaQuery || !hoverMediaQuery.matches) {
                     root.classList.remove('hover-suppressed');
+                    resetAvatarHoverTilt();
                     return;
                 }
 
@@ -1236,6 +1494,24 @@
                 };
 
                 window.addEventListener('pointermove', unlockHover, true);
+            }
+
+            if (window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+                window.addEventListener('pointermove', function(event) {
+                    if (event.pointerType && event.pointerType !== 'mouse') {
+                        return;
+                    }
+
+                    updateAvatarHoverTilt(event.clientX, event.clientY);
+                });
+
+                window.addEventListener('pointerleave', function() {
+                    resetAvatarHoverTilt();
+                });
+
+                window.addEventListener('blur', function() {
+                    resetAvatarHoverTilt();
+                });
             }
 
             function normalizeWheelDelta(event) {
@@ -1310,14 +1586,43 @@
                 qrModal.setAttribute('aria-hidden', 'true');
             }
 
-            avatarTrigger.addEventListener('click', openQrModal);
+            avatarTrigger.addEventListener('click', function() {
+                if (avatarProgrammaticSpinInProgress) {
+                    return;
+                }
+
+                warmQrModalAsset();
+
+                if (shouldUseAvatarFlip()) {
+                    setAvatarFlipped(!avatarTrigger.classList.contains('is-flipped'));
+                    return;
+                }
+
+                openQrModal();
+            });
             qrModalClose.addEventListener('click', closeQrModal);
+            if (contactRevealButton && aboutSection) {
+                contactRevealButton.addEventListener('click', function(event) {
+                    event.preventDefault();
+
+                    aboutSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    clearAvatarContactRevealTimer();
+                    waitForScrollToSettle(function() {
+                        avatarContactRevealTimerId = 0;
+                        playAvatarContactRevealAnimation();
+                    });
+                });
+            }
             qrModal.addEventListener('click', function(event) {
                 if (event.target === qrModal) {
                     closeQrModal();
                 }
             });
             document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && avatarTrigger.classList.contains('is-flipped')) {
+                    setAvatarFlipped(false);
+                }
+
                 if (event.key === 'Escape' && !qrModal.hidden) {
                     closeQrModal();
                 }
